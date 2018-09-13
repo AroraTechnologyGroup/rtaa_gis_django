@@ -44,7 +44,6 @@ rtaa_gis/fileApp/migrations/0002_auto_20170820_1730.py
 rtaa_gis/fileApp/migrations/0003_engineeringfilemodel_lower_file_path.py
 rtaa_gis/home/migrations/
 rtaa_gis/printTool/migrations/
-rtaa_gis/home/utils/ldap_tool.py
 /node_modules/
 /bower_components/
 **/testy_5.txt
