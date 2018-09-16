@@ -14,7 +14,7 @@ router.register('eng-files', views.PagedEngViewSet)
 
 
 urlpatterns = [
-    path('eDocViewer', UserViewer.as_view(template='fileApp/eDocUserView.html', app_name='eDoc Viewer'), name='eDoc'),
+    path('eDocViewer', UserViewer.as_view(template='fileApp/eDocUserView.html', app_name='eDoc Viewer'), name='e-doc'),
     path('file-update', FileUpdater.as_view(), name='file-updater')
 ]
 

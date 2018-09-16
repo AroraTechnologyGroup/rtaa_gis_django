@@ -9,7 +9,7 @@ from rest_framework.permissions import AllowAny
 from .utils.ldap_tool import LDAPQuery
 from .utils.app_config import WebConfig
 from .utils.agol_user import clear_old_users
-from home.models import App
+from home.models import App, ProxyUser
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User, Group
 from django.utils.decorators import method_decorator
@@ -47,11 +47,11 @@ def process_configs():
     # Here these objects represent apps hosted on django framework, not IIS.
     # the groups set the read-only level permissions
     edoc = {
-        "name": "edoc",
+        "name": "e-doc",
         "path": None,
         "groups": ['_RTAA Planning and Engineering', '_RTAA GIS', "Arora"]
     }
-    if settings.DEBUG and settings.LDAP_URL == "gisapps.aroraengineers.com":
+    if settings.DEBUG:
         edoc["groups"].append("All Users")
 
     mobile = {
@@ -64,10 +64,10 @@ def process_configs():
     web_config.load(edoc)
     web_config.load(mobile)
 
-    # create a group for every app's group authorization list
-    cur_groups = Group.objects.all()
+    # create a group for each in every app's group authorization list
+    cur_groups = [g.name for g in Group.objects.all()]
     for group in web_config.groups:
-        if group not in [g.name for g in cur_groups]:
+        if group not in cur_groups:
             try:
                 Group.objects.create(name=group)
             except Exception as e:
@@ -83,13 +83,19 @@ def process_configs():
             except Exception as e:
                 logger.error(e)
 
-    # create an App for every web.config
-    all_apps = App.objects.all()
+    # remove apps that were not found in web configs or text inputs
+    for x in App.objects.all():
+        if x.name not in web_config.apps:
+            x.delete()
+
+    # create the app objects from the parsed configs and django apps
+    all_apps = [x.name for x in App.objects.all()]
     for app in web_config.apps:
         if type(app) == dict:
             name = app["name"]
             groups = app["groups"]
-            if name not in [x.name for x in all_apps]:
+            if name not in all_apps:
+                # create the app object if it was not found
                 try:
                     App.objects.create(name=name)
                 except Exception as e:
@@ -105,13 +111,19 @@ def process_configs():
                         except Exception as e:
                             logger.error(e)
 
-                # load the groups onto the app
+                if "All Users" in groups:
+                    obj.public = True
+                else:
+                    obj.public = False
+
+                # load the groups onto the apps
                 for group in groups:
                     try:
                         gr = Group.objects.get(name=group)
                         obj.groups.add(gr)
                     except Exception as e:
                         logger.error(e)
+                obj.save()
 
             except Exception as e:
                 logger.error(e)
@@ -179,7 +191,7 @@ def query_ldap(name):
     return data
 
 
-def get_name(request):
+def get_user_info(request):
     """from the request return the domain username or the local user for testing"""
     try:
         name = request.META['REMOTE_USER']
@@ -190,35 +202,29 @@ def get_name(request):
     # for testing, if username is '', set it to superuser from django admin
     if name == '':
         name = 'siteadmin'
-    return name
+
+    # proxy model with custom method to return list of app names
+    proxy_user = ProxyUser.objects.get(username=name)
+    final_apps = proxy_user.get_apps()
+
+    user_groups = proxy_user.groups.all()
+    if len(user_groups):
+        # storing just the name of the group
+        user_groups = [x.name for x in user_groups]
+        user_groups.sort()
+
+    return {"name": name, "final_apps": final_apps, "user_groups": user_groups}
 
 
 @api_view(['GET', 'POST'])
 def user_auth(request, format=None):
-    """View to get the user's groups from the framework tables"""
-    name = get_name(request)
+    """View to get the user's auth info from the framework tables"""
+    info = get_user_info(request)
+    name = info["name"]
+    final_apps = info["final_apps"]
+    user_groups = info["user_groups"]
     local_name = name.split("\\")[-1]
     user_obj = User.objects.get(username=name)
-    final_groups = user_obj.groups.all()
-    if len(final_groups):
-        final_groups = [x.name for x in final_groups]
-        final_groups.sort()
-
-    final_apps = []
-    for app in App.objects.all():
-        groups = app.groups.all()
-        if groups.filter(name="All Users").exists():
-            final_apps.append(app.name)
-        if len(groups):
-            for group in groups:
-                if group.name in final_groups:
-                    final_apps.append(app.name)
-        else:
-            # no groups are assigned to the app so it allows all access
-            final_apps.append(app.name)
-
-    final_apps = list(set(final_apps))
-    final_apps.sort()
 
     first_name = user_obj.first_name
     last_name = user_obj.last_name
@@ -227,7 +233,7 @@ def user_auth(request, format=None):
     user_data = {
         "username": name,
         "local_name": local_name,
-        "groups": final_groups,
+        "groups": user_groups,
         "apps": final_apps,
         "firstName": first_name,
         "lastName": last_name,
@@ -253,33 +259,20 @@ class HomePage(APIView):
         resp = Response(template_name=self.template)
         resp['Cache-Control'] = 'no-cache'
 
-        username = get_name(request)
-
         # read the web.config for each app and build the App model with authorization groups
         web_config = process_configs()
 
+        # important to update the apps and auth groups from configs before users
         # run this function to inherit groups from AD
-        user_data = query_ldap(username)
-        user_groups = user_data["groups"]
-        logger.info("user_groups: {}".format(user_groups))
+        query_ldap(request.user.username)
+        user_info = get_user_info(request)
+
+        user_groups = user_info["user_groups"]
 
         # return the list of apps the user can view
-        final_apps = []
-        for x in App.objects.all():
-            app_name = x.name
-            app_groups = x.groups.all()
-            logger.info("app_groups {}: {}".format(app_name, app_groups))
-            if app_groups.filter(name="All Users").exists():
-                final_apps.append(app_name)
+        final_apps = user_info["final_apps"]
 
-            else:
-                for gr in app_groups:
-                    if gr.name in user_groups:
-                        final_apps.append(app_name)
-
-        final_apps = list(set(final_apps))
-
-        local_name = username.split("\\")[-1]
+        local_name = request.user.username.split("\\")[-1]
         # Create user's folder in the media root
         users_dir = os.path.join(settings.MEDIA_ROOT, 'users')
         if not os.path.exists(users_dir):
@@ -291,7 +284,6 @@ class HomePage(APIView):
         server_url = settings.SERVER_URL
         app_name = self.app_name.strip('/')
 
-        logger.info("final apps: {}".format(final_apps))
         resp.data = {"server_url": server_url, "apps": final_apps, "groups": user_groups,
                      "app_name": app_name}
         return resp

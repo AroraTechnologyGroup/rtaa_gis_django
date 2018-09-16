@@ -7,7 +7,7 @@ from openpyxl import load_workbook
 from .utils import buildDocStore
 from .utils.domains import FileTypes
 from home.utils.ldap_tool import LDAPQuery
-from home.models import App
+from home.models import App, ProxyUser
 from analytics.serializers import RecordSerializer
 from .serializers import GridSerializer, EngAssignmentSerializer, EngSerializer
 from .models import GridCell, EngineeringFileModel, EngineeringAssignment
@@ -134,30 +134,18 @@ def authorize_user(request, template):
     resp = Response(template_name=template)
     resp['Cache-Control'] = 'no-cache'
 
-    user = User.objects.get(username=name)
+    user = ProxyUser.objects.get(username=name)
     ldap_groups = user.groups.all()
 
     d = {
         "isEditor": False,
-        "final_apps": []
+        "final_apps": user.get_apps()
     }
     if '_RTAA Planning and Engineering' in [x.name for x in ldap_groups]:
         d["isEditor"] = True
 
     logger.info("ldap_groups = {}".format(ldap_groups))
     logger.info("username = {}".format(name))
-
-    for app in App.objects.all():
-        app_name = app.name
-        groups = app.groups.all()
-        if groups.filter(name="All Users").exists():
-            d["final_apps"].append(app_name)
-
-        for gr in groups:
-            # if the app is authorized for the a group that the user belongs to add it to the list
-            if gr in ldap_groups:
-                if app_name not in d["final_apps"]:
-                    d["final_apps"].append(app_name)
 
     return d
 

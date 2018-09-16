@@ -13,7 +13,7 @@
 
 {% block content %}
     <div id="_outer_div">
-        <form action="{% url 'fileApp:eDoc' %}" method="post" id="_filter_form">
+        <form action="{% url 'fileApp:e-doc' %}" method="post" id="_filter_form">
         {% csrf_token %}
             <div id="_placed_panel">
                 <div id="_buttons">
@@ -27,7 +27,7 @@
                         <button id="_map_handle" class="btn btn-clear">Map</button>
                     </span>
                     <span>
-                        <button id="_reset_handle" formmethod="get" href="{% url 'fileApp:eDoc' %}" class="btn btn-clear">Reset</button>
+                        <button id="_reset_handle" formmethod="get" href="{% url 'fileApp:e-doc' %}" class="btn btn-clear">Reset</button>
                     </span>
 {#                    {% if 'Arora' in groups or '_RTAA_GIS' in groups %}#}
                     <span>
