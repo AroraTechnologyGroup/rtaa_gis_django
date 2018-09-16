@@ -7,7 +7,7 @@ app_name = 'home'
 urlpatterns = [
     path('', HomePage.as_view(), name='index'),
     path('docs', schema_view, name="docs"),
-    path('groups', user_auth, name="user_info"),
+    path('user_info', user_auth, name="user_info"),
     path('login', login, {'extra_context': {'next': '/#home'}}, name='login'),
     path('logout', logout, {'next_page': 'home:login'}, name='logout'),
     path('get_auth_token', rest_framework_views.obtain_auth_token, name='get_auth_token'),
@@ -19,12 +19,9 @@ urlpatterns = [
     path('airspace', HomePage.as_view(template='home/AppLoader.html', app_name='airspace_restricted'),
         name='airspace'),
     path('leaseProperty', HomePage.as_view(template='home/AppLoader.html', app_name='rtaa_lpm'),
-        name='leaseProperty'),
+        name='lpm'),
     path('signageMarking', HomePage.as_view(template='home/AppLoader.html', app_name='Signs'),
-        name='signageMarking'),
+        name='signage'),
     path('mobile', HomePage.as_view(template='home/AppLoader.html', app_name='mobile'), name='mobile'),
     # url(r'^password_change/$', password_change, {'post_change_redirect': 'home:login'}, name='password_change')
 ]
-
-
-
