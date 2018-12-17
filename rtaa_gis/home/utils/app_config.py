@@ -120,4 +120,4 @@ if __name__ == "__main__":
                     lpm_dir=lpm_dir,
                     airspace_dir=airspace_dir,
                     signage_dir=signage_dir)
-    obj.collect_groups()
+    print(obj.collect_groups())

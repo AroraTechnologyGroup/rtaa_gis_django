@@ -11,5 +11,6 @@ if __name__ == '__main__':
     test_runner = TestRunner()
     test1 = test_runner.run_tests(["fileApp.tests"])
     test2 = test_runner.run_tests(["lpm.tests"])
-    result = list({test1, test2})
+    test3 = test_runner.run_tests(["cloudSync.tests"])
+    result = list({test1, test2, test3})
     sys.exit(sum(result))

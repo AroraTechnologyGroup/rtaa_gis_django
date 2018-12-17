@@ -1,6 +1,5 @@
 from rest_framework.test import APIRequestFactory
 from rest_framework.test import APITestCase
-from django.core.urlresolvers import reverse
 
 
 class TestAgreementViewSet(APITestCase):
