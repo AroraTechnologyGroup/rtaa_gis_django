@@ -40,7 +40,7 @@ class ProxyUser(User):
 
                 if len(groups):
                     for group in groups:
-                        if group.name in user_groups:
+                        if group in user_groups:
                             final_apps.append(app.name)
                 else:
                     # no groups are assigned to the app so don't show it.
