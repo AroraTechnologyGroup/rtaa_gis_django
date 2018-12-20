@@ -778,4 +778,4 @@ class FileUpdater(APIView):
         except ObjectDoesNotExist as e:
             logger.error(e)
 
-        return redirect('fileApp:eDoc')
+        return redirect('fileApp:e-doc')

@@ -183,7 +183,7 @@ define([
                   var script_name = window.location.pathname.split("/")[1];
                   url = window.location.origin + "/" + script_name + "/fileApp/eng-io/" + _id + "/_view/";
                 } else {
-                  url = window.location.origin + "/fileApp/eng-io/" + _id + "/_view";
+                  url = window.location.origin + "/fileApp/eng-io/" + _id + "/_view/";
                 }
 
                 var a = domConstruct.create("a", {

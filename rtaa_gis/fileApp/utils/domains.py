@@ -87,6 +87,7 @@ class FileTypes:
         png = {"png": "image/png"}
         jpeg = {"jpg": "image/jpeg"}
         tif = {"tif": "image/tiff"}
+        tiff = {"tif": "image/tiff"}
         dwg = {"dwg": "image/vnd.dwg"}
         lyr = {"lyr": "application/octet-stream"}
         lpk = {"lpk": "application/octet-stream"}
@@ -115,6 +116,7 @@ class FileTypes:
             "JPEG Image": jpeg,
             "IMG Image": img,
             "TIF Image": tif,
+            "TIFF Image": tiff,
             "AutoCad Dwg": dwg,
             "ArcMap Layer File": lyr,
             "ArcMap Layer Package": lpk,
@@ -135,7 +137,7 @@ class FileTypes:
             self.TABLE_VIEWER_TYPES.append((list(self.file_type_choices[f].keys())[0], f))
 
         self.IMAGE_VIEWER_TYPES = []
-        for f in ["PNG Image", "JPEG Image", "IMG Image", "TIF Image"]:
+        for f in ["PNG Image", "JPEG Image", "IMG Image", "TIF Image", "TIFF Image"]:
             self.IMAGE_VIEWER_TYPES.append((list(self.file_type_choices[f].keys())[0], f))
 
         self.GIS_VIEWER_TYPES = []
